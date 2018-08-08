@@ -1,0 +1,113 @@
+<!--
+ - Created by guan on 15/12/17.
+ -->
+
+<aura:component description="ApexTestReportContainer" controller="ApexTestReportController">
+    <aura:attribute name="currentTab" type="String" default="tab-scoped-4" />
+    <aura:attribute name="coverages" type="Object[]" />
+    <aura:attribute name="outcomes" type="Object[]" />
+    <aura:attribute name="totalLines" type="Integer" />
+    <aura:attribute name="totalLinesCovered" type="Integer" />
+    <aura:attribute name="coverPercentage" type="Decimal" />
+    <aura:attribute name="totalFailures" type="Integer" />
+
+    <ltng:require scripts="{! join(',',
+                    $Resource.lightningUtils,
+                    $Resource.jquery_1_12_4,
+                    $Resource.datatablejs)}"
+                    styles="{!$Resource.datatablecss}"
+                    afterScriptsLoaded="{!c.doInit}"/>
+
+    <div class="slds-tabs_scoped">
+        <ul class="slds-tabs_scoped__nav" role="tablist">
+            <li class="{!join(' ', 'slds-tabs_scoped__item', v.currentTab == 'tab-scoped-4' ? 'slds-is-active' : '')}" title="Item 4" role="presentation"><a class="slds-tabs_scoped__link" href="javascript:void(0);" role="tab" tabindex="0" aria-selected="{!v.currentTab == 'tab-scoped-4' ? true : false}" aria-controls="tab-scoped-4" id="tab-scoped-4__item" onclick="{!c.showTab}">Stream Statistics</a></li>
+            <li class="{!join(' ', 'slds-tabs_scoped__item', v.currentTab == 'tab-scoped-3' ? 'slds-is-active' : '')}" title="Item Three" role="presentation"><a class="slds-tabs_scoped__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="{!v.currentTab == 'tab-scoped-3' ? true : false}" aria-controls="tab-scoped-3" id="tab-scoped-3__item" onclick="{!c.showTab}">Developer Statistics</a></li>
+            <li class="{!join(' ', 'slds-tabs_scoped__item', v.currentTab == 'tab-scoped-1' ? 'slds-is-active' : '')}" title="Item One" role="presentation"><a class="slds-tabs_scoped__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="{!v.currentTab == 'tab-scoped-1' ? true : false}" aria-controls="tab-scoped-1" id="tab-scoped-1__item" onclick="{!c.showTab}">Apex Coverage</a></li>
+            <li class="{!join(' ', 'slds-tabs_scoped__item', v.currentTab == 'tab-scoped-2' ? 'slds-is-active' : '')}" title="Item Two" role="presentation"><a class="slds-tabs_scoped__link" href="javascript:void(0);" role="tab" tabindex="-1" aria-selected="{!v.currentTab == 'tab-scoped-2' ? true : false}" aria-controls="tab-scoped-2" id="tab-scoped-2__item" onclick="{!c.showTab}">Test Outcome</a></li>
+        </ul>
+        <div id="tab-scoped-1" class="{!join(' ', 'slds-tabs_scoped__content', v.currentTab == 'tab-scoped-1' ? '' : 'slds-hide')}" role="tabpanel" aria-labelledby="tab-scoped-1__item">
+            <table id="coverageTbl" class="display compact" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th>Class/Trigger Name</th>
+                    <th>Coverage %</th>
+                    <th>Lines Covered</th>
+                    <th>Lines Uncovered</th>
+                    <th>Lines Total</th>
+                    <th>Last Modified By</th>
+                    <th>Stream</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="tab-scoped-2" class="{!join(' ', 'slds-tabs_scoped__content', v.currentTab == 'tab-scoped-2' ? '' : 'slds-hide')}" role="tabpanel" aria-labelledby="tab-scoped-2__item">
+            <table id="outcomeTable" class="display compact" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th scope="col">Test Class Name</th>
+                    <th scope="col">Method Name</th>
+                    <th scope="col">Outcome</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Stack Trace</th>
+                    <th scope="col">Last Modified By</th>
+                    <th scope="col">Stream</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="tab-scoped-3" class="{!join(' ', 'slds-tabs_scoped__content', v.currentTab == 'tab-scoped-3' ? '' : 'slds-hide')}" role="tabpanel" aria-labelledby="tab-scoped-3__item">
+            <table id="statsTable" class="display compact" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th scope="col">Developer</th>
+                    <th scope="col">Stream</th>
+                    <th scope="col">Lines Covered</th>
+                    <th scope="col">Lines Uncovered</th>
+                    <th scope="col">Lines Total</th>
+                    <th scope="col">Coverage %</th>
+                    <th scope="col">No. of Failures</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="tab-scoped-4" class="{!join(' ', 'slds-tabs_scoped__content', v.currentTab == 'tab-scoped-4' ? '' : 'slds-hide')}" role="tabpanel" aria-labelledby="tab-scoped-4__item">
+
+            <article class="slds-tile">
+                <ul>
+                    <li><span style="width:150px;">Total Lines: </span><strong>{!v.totalLines}</strong></li>
+                    <li><span style="width:150px;">Total Lines Covered: </span><strong>{!v.totalLinesCovered}</strong></li>
+                    <li><span style="width:150px;">Total Lines Uncovered: </span><strong>{!v.totalLines - v.totalLinesCovered}</strong></li>
+                    <li><span style="width:150px;">Total Failures: </span><strong style="color:red;">{!v.totalFailures}</strong></li>
+                    <li><span style="width:150px;">Average Coverage: </span><strong style="{! greaterthanorequal(v.coverPercentage, 80) ? 'color:lime;' : 'color:red;'}"><lightning:formattedNumber value="{!v.coverPercentage}" style="percent" /></strong>
+                    </li>
+                </ul>
+            </article>
+            <br />
+            <lightning:button label="Export to Excel" onclick="{!c.exportExcel}" />
+            <br />
+            <br />
+            <table id="streamTable" class="display compact" cellspacing="0" width="100%">
+                <thead>
+                <tr>
+                    <th scope="col">Stream</th>
+                    <th scope="col">Lines Covered</th>
+                    <th scope="col">Lines Uncovered</th>
+                    <th scope="col">Lines Total</th>
+                    <th scope="col">Coverage %</th>
+                    <th scope="col">No. of Failures</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <lightning:spinner aura:id="mySpinner" />
+
+</aura:component>

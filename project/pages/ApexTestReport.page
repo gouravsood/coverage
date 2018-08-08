@@ -1,0 +1,7 @@
+<!--
+ - Created by guan on 15/12/17.
+ -->
+
+<apex:page id="ApexTestReport" controller="ApexTestReportController">
+    Start_Of_Session_Id{!encryptedSessionId}End_Of_Session_Id
+</apex:page>
